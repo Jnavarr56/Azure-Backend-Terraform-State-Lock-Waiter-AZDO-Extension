@@ -13,45 +13,50 @@ variables:
   marketplaceServiceConnection: 'd7744d61-b6a6-40d9-b5f7-ed766d9a9584'
   
 stages:
-  # - stage: Test_and_validate
-  #   displayName: 'Run Tests and Validate Code'
-  #   jobs:
-  #     - job: RunTests
-  #       displayName: 'Execute tests'
-  #       steps:
-  #         - task: NodeTool@0
-  #           displayName: Use Node (specified in .nvmrc file)
-  #           inputs:
-  #             versionSource: 'fromFile'
-  #             versionFilePath: '.nvmrc'
+  - stage: Test_and_validate
+    displayName: 'Run Tests and Validate Code'
+    jobs:
+      # - job: RunTests
+      #   displayName: 'Execute tests'
+      #   steps:
+      #     - checkout: self
+      #       displayName: 'Checkout source code'
+      #       path: '$(Pipeline.Workspace)/SourceCode'
+            
+      #     - task: NodeTool@0
+      #       displayName: Use Node (specified in .nvmrc file)
+      #       inputs:
+      #         versionSource: 'fromFile'
+      #         versionFilePath: '$(Pipeline.Workspace)/SourceCode/.nvmrc'
 
-  #         - task: AzureCLI@2
-  #           displayName: 'Add test .env file'
-  #           inputs:
-  #             azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
-  #             scriptType: 'pscore'
-  #             scriptLocation: 'inlineScript'
-  #             inlineScript: |
-  #               (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env;
-  #               ls -la ./tests | grep '.env';
+      #     - task: AzureCLI@2
+      #       displayName: 'Add test .env file'
+      #       inputs:
+      #         azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
+      #         scriptType: 'pscore'
+      #         scriptLocation: 'inlineScript'
+      #         inlineScript: |
+      #           cd '$(Pipeline.Workspace)/SourceCode';
+      #           (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env;
+      #           ls -la ./tests | grep '.env';
           
-  #         - task: PowerShell@2
-  #           displayName: 'Install dependencies and run tests (unit and integration)'
-  #           inputs:
-  #             targetType: 'inline'
-  #             pwsh: true
-  #             script: |
-  #               npm ci;
-  #               npm test;
+      #     - task: PowerShell@2
+      #       displayName: 'Install dependencies and run tests (unit and integration)'
+      #       inputs:
+      #         targetType: 'inline'
+      #         pwsh: true
+      #         script: |
+      #           cd '$(Pipeline.Workspace)/SourceCode';
+      #           npm ci;
+      #           npm test;
           
-  #         - task: PublishTestResults@2
-  #           displayName: 'Publish test results'
-  #           inputs:
-  #             testResultsFormat: 'JUnit'
-  #             testResultsFiles: '**/test-results.xml'
-  #             searchFolder: '$(System.DefaultWorkingDirectory)'
+      #     - task: PublishTestResults@2
+      #       displayName: 'Publish test results'
+      #       inputs:
+      #         testResultsFormat: 'JUnit'
+      #         testResultsFiles: '$(Pipeline.Workspace)/SourceCode/test-results.xml'
 
-  - stage: Package_extension
+  - stage: PackageExtension
     displayName: 'Build and Package Extension'
     # dependsOn: Test_and_validate
     # condition: succeeded()
@@ -59,6 +64,24 @@ stages:
       - job: PackageExtension
         displayName: 'Create VSIX package'
         steps:
+          - task: PowerShell@2
+            displayName: 'Build extension'
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              script: |
+                $pathToDelete = '$(Pipeline.Workspace)/SourceCode';
+                if (Test-Path -LiteralPath $pathToDelete -PathType Container) {
+                  Remove-Item -LiteralPath $pathToDelete -Recurse -Force -ErrorAction SilentlyContinue;
+                  Write-Output "Directory '$pathToDelete' removed successfully.";
+                } else {
+                  Write-Output "Directory '$pathToDelete' does not exist.";
+                }
+
+          - checkout: self
+            displayName: 'Checkout source code'
+            path: '$(Pipeline.Workspace)/SourceCode'
+
           - task: TfxInstaller@4
             displayName: 'Install TFX CLI'
             inputs:
@@ -68,7 +91,7 @@ stages:
             displayName: Use Node (specified in .nvmrc file)
             inputs:
               versionSource: 'fromFile'
-              versionFilePath: '.nvmrc'
+              versionFilePath: '$(Pipeline.Workspace)/SourceCode/.nvmrc'
 
           - task: PowerShell@2
             displayName: 'Build extension'
@@ -76,6 +99,7 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
+                cd '$(Pipeline.Workspace)/SourceCode'
                 npm ci;
                 npm run build;
                 # npm run package;
@@ -92,7 +116,7 @@ stages:
                 Write-Host "##vso[task.setsecret]$accessToken"
                 Write-Host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
 
-                ls;
+                ls '$(Pipeline.Workspace)';
 
           - task: QueryAzureDevOpsExtensionVersion@4
             name: QueryVersion
@@ -109,7 +133,7 @@ stages:
             env:
               TFX_TRACE: '1'
             inputs:
-              rootFolder: '$(Pipeline.Workspace)/src'
+              rootFolder: '$(Pipeline.Workspace)/SourceCode/src'
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
@@ -118,7 +142,7 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
-              patternManifest: '$(Pipeline.Workspace)/*.json'
+              # patternManifest: '$(Pipeline.Workspace)/SourceCode/*.json'
 
           - task: PowerShell@2
             displayName: 'Get filename'
@@ -126,7 +150,7 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').FullName;
+                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
                 Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
 
           - task: PublishBuildArtifacts@1
