@@ -1,7 +1,8 @@
 trigger: 
 - main
 
-pool: 'ubuntu-latest'
+pool: 
+  vmImage: 'ubuntu-latest'
 
 variables:
   publisherId: 'jorge-codes'        
