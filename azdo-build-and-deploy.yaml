@@ -106,6 +106,8 @@ stages:
             displayName: 'Package extension'
             inputs:
               rootFolder: '$(System.DefaultWorkingDirectory)/src'
+
+              /home/vsts/work/1/s
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
@@ -114,6 +116,7 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
+              patternManifest: '$(Pipeline.Workspace)/vss-extension.json'
 
           - task: PowerShell@2
             displayName: 'Build and package extension'
@@ -158,6 +161,7 @@ stages:
                       $accessToken = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query "accessToken" --output tsv
                       write-host "##vso[task.setsecret]$accessToken"
                       write-host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
+                      ls;
                       
                 - task: DownloadPipelineArtifact@1
                   inputs:
