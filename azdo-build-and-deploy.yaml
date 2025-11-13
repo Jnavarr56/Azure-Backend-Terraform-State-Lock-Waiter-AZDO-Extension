@@ -165,19 +165,16 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                $childItem = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse);
-                $vsixFileName = $childItem.Name;
-                $vsixFileFullName = $childItem.FullName;
+                $vsixFileFullName = $(Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
+                Write-Output "VSIX File Full Name: $vsixFileFullName";
+                Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
-                Move-Item -Path $vsixFileFullName -Destination $(Pipeline.Workspace)/extension.vsix -Force;
-                Rename-Item -Path $vsixFileFullName -NewName "extension.vsix";
-
-          - task: PublishBuildArtifacts@2
+          - task: PublishPipelineArtifact@1
             displayName: 'Publish VSIX artifact'
             inputs:
-              PathtoPublish: 'extension.vsix'
-              ArtifactName: 'package'
-              publishLocation: 'Container'
+              publishLocation: 'pipeline'
+              targetPath: '$(vsixFileFullName)'
+
 
           - task: PowerShell@2
             displayName: 'Remove local artifact'
@@ -221,7 +218,8 @@ stages:
                     targetType: 'inline'
                     pwsh: true
                     script: |
-                      $vsixFileFullName = (Get-ChildItem -Path '$(Pipeline.Workspace)' -Filter '*.vsix' -Recurse).FullName;
+                      $vsixFileFullName = $(Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
+                      Write-Output "VSIX File Full Name: $vsixFileFullName";
                       Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
                 - task: PublishAzureDevOpsExtension@4
