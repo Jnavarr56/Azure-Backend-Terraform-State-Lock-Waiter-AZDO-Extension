@@ -76,7 +76,6 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                npm run clean;
                 npm run build;
                 npm run package;
 
@@ -106,8 +105,6 @@ stages:
             displayName: 'Package extension'
             inputs:
               rootFolder: '$(System.DefaultWorkingDirectory)/src'
-
-              /home/vsts/work/1/s
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
