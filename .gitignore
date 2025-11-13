@@ -1,0 +1,12 @@
+**/node_modules/
+**/*.js
+**/*.js.map
+**/*.d.ts
+**/*.d.ts.map
+!**/*/task.json
+.vscode/
+.eslintcache
+!**/clean-compiled.js
+!**/vss-extension.json
+**/*.vsix
+**/test-results.xml

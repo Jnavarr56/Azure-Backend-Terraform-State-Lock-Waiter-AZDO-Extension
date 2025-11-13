@@ -10,7 +10,7 @@
         "lint:fix": "eslint . --ext .ts --fix",
         "format": "prettier --write \"**/*.{ts,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,json,md}\"",
-        "test": "    mocha --reporter mocha-multi-reporters --reporter-options configFile=reporter-config.json",
+        "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=reporter-config.json",
         "pretest": "tsc -p .",
         "clean": "node clean-compiled.js"
     },

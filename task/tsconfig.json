@@ -15,6 +15,6 @@
         "sourceMap": true,
         "types": ["node", "mocha"]
     },
-    "include": ["src/**/*.ts", "tests/**/*.ts"],
+    "include": ["tests/**/*.ts", "index.ts"],
     "exclude": ["node_modules"]
 }

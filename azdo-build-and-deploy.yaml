@@ -118,6 +118,16 @@ stages:
                 cd '$(Pipeline.Workspace)/SourceCode/task';
                 npm ci;
                 npm run build;
+                ls;
+
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish task directory artifact'
+            inputs:
+              publishLocation: 'pipeline'
+              targetPath: '$(Pipeline.Workspace)/SourceCode/task'
+              artifactName: '${artifactName}-pre-package'
+
 
           - task: AzureCLI@2
             displayName: 'Set marketplace service connection auth token'
