@@ -1,6 +1,6 @@
 {
     "manifestVersion": 1,
-    "id": "azure-backend-terraform-state-lock-waiter",
+    "id": "azurebackendterraformstatelockwaiter",
     "name": "Azure Backend Terraform State Lock Waiter",
     "version": "1.0.0",
     "publisher": "jorge-codes",
