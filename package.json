@@ -12,6 +12,7 @@
         "format:check": "prettier --check \"**/*.{ts,json,md}\"",
         "test": "mocha tests/**/_suite.js",
         "pretest": "tsc -p .",
+        
         "clean": "node clean-compiled.js"
     },
     "keywords": [

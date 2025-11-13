@@ -1,24 +1,23 @@
 import tl = require('azure-pipelines-task-lib/task');
-import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
-import { DefaultAzureCredential, ClientSecretCredential } from '@azure/identity';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { AzureCliCredential, TokenCredential, ClientSecretCredential } from '@azure/identity';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as z from 'zod';
-import { error } from 'console';
 
 interface TerraformBackendConfig {
-    storage_account_name?: string;
-    container_name?: string;
-    key?: string;
-    resource_group_name?: string;
+    storage_account_name: string;
+    container_name: string;
+    key: string;
+    resource_group_name: string;
 }
 
 interface TerraformState {
     version?: number;
     terraform_version?: string;
-    backend?: {
-        type?: string;
-        config?: TerraformBackendConfig;
+    backend: {
+        type: string;
+        config: TerraformBackendConfig;
     };
 }
 
@@ -54,7 +53,7 @@ async function run() {
         //     connectedServiceName, 'subscriptionid'
         // );
 
-        //     const tenantId = tl.getEndpointAuthorizationParameter(connectedServiceName, 'tenantid', false);
+        const tenantId = tl.getEndpointAuthorizationParameter(connectedServiceName, 'tenantid', false);
         //     const subscriptionId = tl.getEndpointDataParameter(connectedServiceName, 'subscriptionid', false);
 
         //     console.log('Azure subscription configured successfully');
@@ -114,8 +113,6 @@ async function run() {
         console.log(`Reading Terraform state file from: ${tfStateFilePath}`);
         const tfStateContent = fs.readFileSync(tfStateFilePath, 'utf8');
 
-
-
         let tfState: TerraformState;
 
         try {
@@ -149,102 +146,114 @@ async function run() {
             if (workspaceContent) {
                 currentWorkspace = workspaceContent;
                 console.log(`Detected Terraform workspace: ${currentWorkspace}`);
+            } 
+        } 
+
+        if (!currentWorkspace) {
+            console.log('No workspace detected, using default workspace');
+        }
+
+        const backendConfig = tfState.backend.config;
+        if (!backendConfig) {
+            throw new Error('Backend configuration is missing in Terraform state file');
+        }
+
+        const storageAccountName = backendConfig.storage_account_name;
+        const containerName = backendConfig.container_name;
+        let blobName = backendConfig.key;
+
+        if (!storageAccountName || !containerName || !blobName) {
+            throw new Error('Backend configuration is incomplete. Required: storage_account_name, container_name, key');
+        }
+
+        if (currentWorkspace) {
+            blobName = `${blobName}env:${currentWorkspace}`;
+
+            console.log(`Using workspace-specific blob path for workspace '${currentWorkspace}': ${blobName}`);
+            
+        } else {
+            console.log(`Using default blob path: ${blobName}`);
+        }
+
+        console.log(`Storage Account: ${storageAccountName}`);
+        console.log(`Container: ${containerName}`);
+        console.log(`Blob: ${blobName}`);
+
+        let credential: TokenCredential;
+
+        if (servicePrincipalId && servicePrincipalKey && tenantId) {
+            console.log('Using Service Principal authentication');
+            credential = new ClientSecretCredential(tenantId, servicePrincipalId, servicePrincipalKey);
+        } else {
+            console.log('Using  Azure CLI Credential');
+            credential = new AzureCliCredential();
+        }
+
+
+        const blobServiceClient = new BlobServiceClient(
+            `https://${storageAccountName}.blob.core.windows.net`,
+            credential
+        );
+
+        try {
+            await blobServiceClient.getProperties();
+        } catch (error: any) {
+            console.error(error);
+            throw new Error(`Failed to access storage account '${storageAccountName}'. Please ensure the storage account exists and the supplied service connection has the permissions to access the blob: '${error.message}'.`);
+        }
+
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        if (!await containerClient.exists()) {
+            throw new Error(`Container '${containerName}' does not exist in storage account '${storageAccountName}'`);
+        }
+
+        const blobClient = containerClient.getBlobClient(blobName);
+        if (!await blobClient.exists()) {
+            throw new Error(`Blob '${blobName}' does not exist in container '${containerName}' in storage account '${storageAccountName}'.`);
+        }
+
+        console.log('Checking for lease on Terraform state file...');
+
+        // Poll until the blob is not leased
+        const maxWaitTime = maxWaitTimeSeconds * 1000; // Convert to milliseconds
+        const pollInterval = pollIntervalSeconds * 1000; // Convert to milliseconds
+        const startTime = Date.now();
+
+        // eslint-disable-next-line
+        while (true) {
+            try {
+                const properties = await blobClient.getProperties();
+                const leaseState = properties.leaseState;
+                const leaseStatus = properties.leaseStatus;
+
+                console.log(`Lease Status: ${leaseStatus}, Lease State: ${leaseState}`);
+
+                if (leaseState === 'available' || leaseStatus === 'unlocked') {
+                    console.log('✓ Terraform state file is not leased. Proceeding...');
+                    break;
+                }
+
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime >= maxWaitTime) {
+                    throw new Error(
+                        `Timeout: Terraform state file still has a lease after ${maxWaitTimeSeconds} seconds (${Math.round(maxWaitTimeSeconds / 60)} minutes)`
+                    );
+                }
+
+                const remainingTime = Math.round((maxWaitTime - elapsedTime) / 1000);
+                console.log(`Terraform state file is currently leased. Waiting... (${remainingTime}s remaining)`);
+
+                await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            } catch (error: any) {
+                if (error.statusCode === 404) {
+                    console.log('✓ Terraform state file does not exist yet (no lease). Proceeding...');
+                    break;
+                }
+                throw error;
             }
         }
 
-        //     if (!currentWorkspace) {
-        //         console.log('No workspace detected, using default workspace');
-        //     }
-
-        tl.setResult(tl.TaskResult.Succeeded, 'Fake Successful Run');
-
-   
-
-        //     const backendConfig = tfState.backend.config;
-        //     if (!backendConfig) {
-        //         throw new Error('Backend configuration is missing in Terraform state file');
-        //     }
-
-        //     const storageAccountName = backendConfig.storage_account_name;
-        //     const containerName = backendConfig.container_name;
-        //     let blobName = backendConfig.key;
-
-        //     if (!storageAccountName || !containerName || !blobName) {
-        //         throw new Error('Backend configuration is incomplete. Required: storage_account_name, container_name, key');
-        //     }
-
-        //     // If a workspace is selected (not default), derive the blob name
-        //     if (currentWorkspace && currentWorkspace !== 'default') {
-        //         blobName = `${blobName}env:${currentWorkspace}`;
-
-        //         console.log(`Using workspace-specific blob path for workspace '${currentWorkspace}'`);
-        //     }
-
-        //     console.log(`Storage Account: ${storageAccountName}`);
-        //     console.log(`Container: ${containerName}`);
-        //     console.log(`Blob: ${blobName}`);
-
-        //     // Create Azure credential
-        //     let credential;
-        //     if (servicePrincipalId && servicePrincipalKey && tenantId) {
-        //         console.log('Using Service Principal authentication');
-        //         credential = new ClientSecretCredential(tenantId, servicePrincipalId, servicePrincipalKey);
-        //     } else {
-        //         console.log('Using Default Azure Credential');
-        //         credential = new DefaultAzureCredential();
-        //     }
-
-        //     // Create BlobServiceClient
-        //     const blobServiceClient = new BlobServiceClient(
-        //         `https://${storageAccountName}.blob.core.windows.net`,
-        //         credential
-        //     );
-
-        //     const containerClient = blobServiceClient.getContainerClient(containerName);
-        //     const blobClient = containerClient.getBlobClient(blobName);
-
-        //     console.log('Checking for lease on Terraform state file...');
-
-        //     // Poll until the blob is not leased
-        //     const maxWaitTime = maxWaitTimeSeconds * 1000; // Convert to milliseconds
-        //     const pollInterval = pollIntervalSeconds * 1000; // Convert to milliseconds
-        //     const startTime = Date.now();
-
-        //     // eslint-disable-next-line
-        //     while (true) {
-        //         try {
-        //             const properties = await blobClient.getProperties();
-        //             const leaseState = properties.leaseState;
-        //             const leaseStatus = properties.leaseStatus;
-
-        //             console.log(`Lease Status: ${leaseStatus}, Lease State: ${leaseState}`);
-
-        //             if (leaseState === 'available' || leaseStatus === 'unlocked') {
-        //                 console.log('✓ Terraform state file is not leased. Proceeding...');
-        //                 break;
-        //             }
-
-        //             const elapsedTime = Date.now() - startTime;
-        //             if (elapsedTime >= maxWaitTime) {
-        //                 throw new Error(
-        //                     `Timeout: Terraform state file still has a lease after ${maxWaitTimeSeconds} seconds (${Math.round(maxWaitTimeSeconds / 60)} minutes)`
-        //                 );
-        //             }
-
-        //             const remainingTime = Math.round((maxWaitTime - elapsedTime) / 1000);
-        //             console.log(`Terraform state file is currently leased. Waiting... (${remainingTime}s remaining)`);
-
-        //             await new Promise((resolve) => setTimeout(resolve, pollInterval));
-        //         } catch (error: any) {
-        //             if (error.statusCode === 404) {
-        //                 console.log('✓ Terraform state file does not exist yet (no lease). Proceeding...');
-        //                 break;
-        //             }
-        //             throw error;
-        //         }
-        //     }
-
-        // tl.setResult(tl.TaskResult.Succeeded, 'Terraform state file is available (no lease)');
+        tl.setResult(tl.TaskResult.Succeeded, 'Terraform state file is available (no lease)');
     } catch (err: any) {
         console.log(err);
         tl.setResult(tl.TaskResult.Failed, err.message);
