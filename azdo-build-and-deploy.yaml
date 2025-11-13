@@ -164,7 +164,7 @@ stages:
               extensionVersion: '$(Extension.Version)'
               updateTasksVersion: true
               updateTasksVersionType: 'patch'
-              extensionVisibility: '$(visibility)'
+              # extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
               patternManifest: '**/vss-extension.json'
 
