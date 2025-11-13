@@ -8,5 +8,4 @@ runner.setInput('azureServiceConnection', process.env['TEST_AUTHORIZED_AZURERM_S
 runner.setInput('terraformProjectPath', path.resolve(__dirname));
 runner.setInput('maxWaitTimeSeconds', '120');
 
-
 runner.run();

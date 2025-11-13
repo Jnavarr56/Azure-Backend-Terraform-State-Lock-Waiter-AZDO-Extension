@@ -29,7 +29,6 @@ const pollIntervalSeconds_MIN = 10;
 const pollIntervalSeconds_MAX = 300;
 const pollIntervalSeconds_DEFAULT = '30';
 
-
 async function run() {
     try {
         console.log('============  Starting Terraform State Lease Checker Task ============');
@@ -108,7 +107,7 @@ async function run() {
                 `For pollIntervalSeconds -> ${err.issues[0].message} | pollIntervalSeconds must be an integer between ${pollIntervalSeconds_MIN} and ${pollIntervalSeconds_MAX}.`
             );
         }
-        console.log(`pollIntervalSeconds: ${pollIntervalSeconds}`);        
+        console.log(`pollIntervalSeconds: ${pollIntervalSeconds}`);
 
         console.log(`Reading Terraform state file from: ${tfStateFilePath}`);
         const tfStateContent = fs.readFileSync(tfStateFilePath, 'utf8');
@@ -116,19 +115,21 @@ async function run() {
         let tfState: TerraformState;
 
         try {
-            tfState =  z.object({
-                version: z.number(),
-                terraform_version: z.string(),
-                backend: z.object({
-                    type: z.literal('azurerm'),
-                    config: z.object({
-                        storage_account_name: z.string(),
-                        container_name: z.string(),
-                        key: z.string(),
-                        resource_group_name: z.string()
-                    })
+            tfState = z
+                .object({
+                    version: z.number(),
+                    terraform_version: z.string(),
+                    backend: z.object({
+                        type: z.literal('azurerm'),
+                        config: z.object({
+                            storage_account_name: z.string(),
+                            container_name: z.string(),
+                            key: z.string(),
+                            resource_group_name: z.string(),
+                        }),
+                    }),
                 })
-            }).parse(JSON.parse(tfStateContent));
+                .parse(JSON.parse(tfStateContent));
         } catch (err: any) {
             if (err instanceof SyntaxError) {
                 throw new Error(`Failed to parse Terraform state file as JSON: ${err}`);
@@ -146,8 +147,8 @@ async function run() {
             if (workspaceContent) {
                 currentWorkspace = workspaceContent;
                 console.log(`Detected Terraform workspace: ${currentWorkspace}`);
-            } 
-        } 
+            }
+        }
 
         if (!currentWorkspace) {
             console.log('No workspace detected, using default workspace');
@@ -170,7 +171,6 @@ async function run() {
             blobName = `${blobName}env:${currentWorkspace}`;
 
             console.log(`Using workspace-specific blob path for workspace '${currentWorkspace}': ${blobName}`);
-            
         } else {
             console.log(`Using default blob path: ${blobName}`);
         }
@@ -189,7 +189,6 @@ async function run() {
             credential = new AzureCliCredential();
         }
 
-
         const blobServiceClient = new BlobServiceClient(
             `https://${storageAccountName}.blob.core.windows.net`,
             credential
@@ -199,17 +198,21 @@ async function run() {
             await blobServiceClient.getProperties();
         } catch (error: any) {
             console.error(error);
-            throw new Error(`Failed to access storage account '${storageAccountName}'. Please ensure the storage account exists and the supplied service connection has the permissions to access the blob: '${error.message}'.`);
+            throw new Error(
+                `Failed to access storage account '${storageAccountName}'. Please ensure the storage account exists and the supplied service connection has the permissions to access the blob: '${error.message}'.`
+            );
         }
 
         const containerClient = blobServiceClient.getContainerClient(containerName);
-        if (!await containerClient.exists()) {
+        if (!(await containerClient.exists())) {
             throw new Error(`Container '${containerName}' does not exist in storage account '${storageAccountName}'`);
         }
 
         const blobClient = containerClient.getBlobClient(blobName);
-        if (!await blobClient.exists()) {
-            throw new Error(`Blob '${blobName}' does not exist in container '${containerName}' in storage account '${storageAccountName}'.`);
+        if (!(await blobClient.exists())) {
+            throw new Error(
+                `Blob '${blobName}' does not exist in container '${containerName}' in storage account '${storageAccountName}'.`
+            );
         }
 
         console.log('Checking for lease on Terraform state file...');

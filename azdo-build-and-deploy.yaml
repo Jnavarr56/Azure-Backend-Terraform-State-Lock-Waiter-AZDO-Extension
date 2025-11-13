@@ -1,0 +1,161 @@
+trigger: 
+- main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  publisherId: 'my-publisher-id'        # Update with your publisher ID
+  extensionId: 'my-extension-id'        # Update with your extension ID
+  extensionName: 'My Extension Name'    # Update with your extension name
+  artifactName: 'vsix-artifact'
+
+stages:
+  - stage: Test_and_validate
+    displayName: 'Run Tests and Validate Code'
+    jobs:
+      - job: RunTests
+        displayName: 'Execute tests'
+        steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: DevOpsUserAccessAutomation
+              KeyVaultName: azpdovault
+              SecretsFilter: '
+              RunAsPreJob: true
+
+          - task: NodeTool@0
+            displayName: Use Node (specified in .nvmrc file)
+            inputs:
+              versionSource: 'fromFile'
+              versionFilePath: '.nvmrc'
+          
+          - task: Npm@1
+            displayName: 'Install dependencies'
+            inputs:
+              command: 'ci'
+
+          - task: AzureCLI@2
+            displayName: 'Add test .env file'
+            inputs:
+              azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | jq -r  '.value' > ./tests/.env
+          
+          - task: Npm@1
+            displayName: 'Run unit and integration tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'test'
+          
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/test-results.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+
+  - stage: Package_extension
+    displayName: 'Package Extension'
+    dependsOn: Test_and_validate
+    condition: succeeded()
+    jobs:
+      - job: PackageExtension
+        displayName: 'Create VSIX package'
+        steps:
+          - task: TfxInstaller@4
+            displayName: 'Install TFX CLI'
+            inputs:
+              version: "v0.x"
+
+          - task: NodeTool@0
+            displayName: Use Node (specified in .nvmrc file)
+            inputs:
+              versionSource: 'fromFile'
+              versionFilePath: '.nvmrc'
+          
+          - task: Npm@1
+            displayName: 'Install dependencies'
+            inputs:
+              command: 'ci'
+
+          - task: Npm@1
+            displayName: 'Clean previous build files'
+            inputs:
+              command: 'custom'
+              customCommand: 'clean'
+
+          - task: Npm@1
+            displayName: 'Compile TypeScript'
+            inputs:
+              command: 'custom'
+              customCommand: 'buiild'
+
+          - task: Npm@1
+            displayName: 'Package extension'
+            inputs:
+              command: 'custom'
+              customCommand: 'package'
+
+          - task: QueryAzureDevOpsExtensionVersion@4
+            name: QueryVersion
+            displayName: 'Query current extension version'
+            inputs:
+              connectTo: 'VsTeam'
+              connectedServiceName: 'marketplace-connection'
+              publisherId: '$(publisherId)'
+              extensionId: '$(extensionId)'
+              versionAction: 'Patch'
+          
+          - task: PackageAzureDevOpsExtension@4
+            displayName: 'Package extension'
+            inputs:
+              rootFolder: '$(System.DefaultWorkingDirectory)'
+              publisherId: '$(publisherId)'
+              extensionId: '$(extensionId)'
+              extensionName: '$(extensionName)'
+              extensionVersion: '$(QueryVersion.Extension.Version)'
+              updateTasksVersion: true
+              updateTasksVersionType: 'patch'
+              extensionVisibility: 'private'
+              extensionPricing: 'free'
+          
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish VSIX artifact'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/*.vsix'
+              ArtifactName: '$(artifactName)'
+              publishLocation: 'Container'
+
+  - stage: Publish_to_marketplace
+    displayName: 'Publish to Marketplace'
+    dependsOn: Package_extension
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: PublishExtension
+        displayName: 'Deploy to marketplace'
+        environment: 'marketplace-production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: TfxInstaller@4
+                  displayName: 'Install TFX CLI'
+                  inputs:
+                    version: "v0.x"
+                
+                - task: PublishAzureDevOpsExtension@4
+                  displayName: 'Publish to marketplace'
+                  inputs:
+                    connectTo: 'VsTeam'
+                    connectedServiceName: 'marketplace-connection'
+                    fileType: 'vsix'
+                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)/*.vsix'
+                    publisherId: '$(publisherId)'
+                    extensionId: '$(extensionId)'
+                    extensionName: '$(extensionName)'
+                    updateTasksVersion: false
+                    extensionVisibility: 'private'
+                    extensionPricing: 'free'

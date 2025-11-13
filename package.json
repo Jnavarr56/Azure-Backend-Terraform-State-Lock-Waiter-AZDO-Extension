@@ -10,9 +10,8 @@
         "lint:fix": "eslint . --ext .ts --fix",
         "format": "prettier --write \"**/*.{ts,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,json,md}\"",
-        "test": "mocha tests/**/_suite.js",
+        "test": "    mocha --reporter mocha-multi-reporters --reporter-options configFile=reporter-config.json",
         "pretest": "tsc -p .",
-        
         "clean": "node clean-compiled.js"
     },
     "keywords": [
@@ -42,6 +41,8 @@
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-prettier": "^5.0.1",
         "mocha": "^10.2.0",
+        "mocha-junit-reporter": "^2.2.1",
+        "mocha-multi-reporters": "^1.5.1",
         "prettier": "^3.1.0",
         "sinon": "^17.0.1",
         "tfx-cli": "^0.16.0",

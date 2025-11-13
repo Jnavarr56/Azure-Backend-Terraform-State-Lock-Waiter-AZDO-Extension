@@ -9,3 +9,4 @@ node_modules/
 !clean-compiled.js
 !vss-extension.json
 *.vsix
+test-results.xml
