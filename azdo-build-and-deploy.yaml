@@ -171,7 +171,7 @@ stages:
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
             inputs:
-              PathtoPublish: '$($vsixFileFullName)'
+              PathtoPublish: '$(vsixFileFullName)'
               ArtifactName: 'package'
               publishLocation: 'Container'
 
