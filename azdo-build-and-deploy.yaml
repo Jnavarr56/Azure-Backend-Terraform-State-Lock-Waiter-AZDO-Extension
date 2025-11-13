@@ -133,7 +133,7 @@ stages:
             displayName: 'Publish VSIX artifact'
             inputs:
               PathtoPublish: '$(vsixFileName)'
-              ArtifactName: 'pack.vsix'
+              ArtifactName: '$(artifactName)'
               publishLocation: 'Container'
 
   - stage: Publish_to_marketplace
@@ -162,7 +162,7 @@ stages:
                 - task: DownloadPipelineArtifact@1
                   inputs:
                     artifactName: 'package.vsix'
-                    downloadPath: '$(Pipeline.Workspace)/pack.vsix'
+                    downloadPath: '$(Pipeline.Workspace)/$(artifactName)'
 
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
@@ -170,7 +170,7 @@ stages:
                     connectTo: 'VsTeam'
                     connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
-                    vsixFile: '$(Pipeline.Workspace)/pack.vsix'
+                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)'
                     publisherId: '$(publisherId)'
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'
