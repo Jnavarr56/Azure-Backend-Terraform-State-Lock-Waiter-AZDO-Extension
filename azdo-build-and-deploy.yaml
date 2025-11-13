@@ -89,8 +89,8 @@ stages:
               useGlobalConfig: true
               inlineScript: |
                 $accessToken = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query "accessToken" --output tsv
-                write-host "##vso[task.setsecret]$accessToken"
-                write-host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
+                Write-Host "##vso[task.setsecret]$accessToken"
+                Write-Host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
 
           - task: QueryAzureDevOpsExtensionVersion@4
             name: QueryVersion
@@ -114,12 +114,25 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
-          
+
+          - task: PowerShell@2
+            displayName: 'Build and package extension'
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              script: |
+                npm run clean;
+                npm run build;
+                npm run package;
+
+                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').Name;
+                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName"
+
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
             inputs:
-              PathtoPublish: '$(System.DefaultWorkingDirectory)/*.vsix'
-              ArtifactName: '$(artifactName)'
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/$(vsixFileName)'
+              ArtifactName: '$(vsixFileName)'
               publishLocation: 'Container'
 
   - stage: Publish_to_marketplace
@@ -145,10 +158,10 @@ stages:
                       write-host "##vso[task.setsecret]$accessToken"
                       write-host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
                       
-                # - task: TfxInstaller@4
-                #   displayName: 'Install TFX CLI'
-                #   inputs:
-                #     version: "v0.x"
+                - task: DownloadPipelineArtifact@1
+                  inputs:
+                    artifactName: $(vsixFileName)
+                    downloadPath: '$(Pipeline.Workspace)/$(vsixFileName)
                 
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
@@ -156,7 +169,7 @@ stages:
                     connectTo: 'VsTeam'
                     connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
-                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)/*.vsix'
+                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)'
                     publisherId: '$(publisherId)'
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'

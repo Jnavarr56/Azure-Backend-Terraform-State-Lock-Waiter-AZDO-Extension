@@ -1,5 +1,7 @@
 # Terraform State Lease Checker - Azure DevOps Extension
 
+[![Build Status](https://dev.azure.com/pli-dev/DevOps/_apis/build/status%2FJnavarr56.Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension?branchName=main)](https://dev.azure.com/pli-dev/DevOps/_build/latest?definitionId=669&branchName=main)
+
 This Azure DevOps custom task extension checks if a Terraform state file stored in Azure Storage has a lease on it and waits until the lease is released.
 
 ## Features
