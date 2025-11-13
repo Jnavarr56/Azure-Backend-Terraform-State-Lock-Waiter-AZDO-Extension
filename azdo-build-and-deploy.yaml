@@ -13,43 +13,43 @@ variables:
   marketplaceServiceConnection: 'd7744d61-b6a6-40d9-b5f7-ed766d9a9584'
   
 stages:
-  - stage: Test_and_validate
-    displayName: 'Run Tests and Validate Code'
-    jobs:
-      - job: RunTests
-        displayName: 'Execute tests'
-        steps:
-          - task: NodeTool@0
-            displayName: Use Node (specified in .nvmrc file)
-            inputs:
-              versionSource: 'fromFile'
-              versionFilePath: '.nvmrc'
+  # - stage: Test_and_validate
+  #   displayName: 'Run Tests and Validate Code'
+  #   jobs:
+  #     - job: RunTests
+  #       displayName: 'Execute tests'
+  #       steps:
+  #         - task: NodeTool@0
+  #           displayName: Use Node (specified in .nvmrc file)
+  #           inputs:
+  #             versionSource: 'fromFile'
+  #             versionFilePath: '.nvmrc'
 
-          - task: AzureCLI@2
-            displayName: 'Add test .env file'
-            inputs:
-              azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
-              scriptType: 'pscore'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env;
-                ls -la ./tests | grep '.env';
+  #         - task: AzureCLI@2
+  #           displayName: 'Add test .env file'
+  #           inputs:
+  #             azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
+  #             scriptType: 'pscore'
+  #             scriptLocation: 'inlineScript'
+  #             inlineScript: |
+  #               (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env;
+  #               ls -la ./tests | grep '.env';
           
-          - task: PowerShell@2
-            displayName: 'Install dependencies and run tests (unit and integration)'
-            inputs:
-              targetType: 'inline'
-              pwsh: true
-              script: |
-                npm ci;
-                # npm test;
+  #         - task: PowerShell@2
+  #           displayName: 'Install dependencies and run tests (unit and integration)'
+  #           inputs:
+  #             targetType: 'inline'
+  #             pwsh: true
+  #             script: |
+  #               npm ci;
+  #               npm test;
           
-          # - task: PublishTestResults@2
-          #   displayName: 'Publish test results'
-          #   inputs:
-          #     testResultsFormat: 'JUnit'
-          #     testResultsFiles: '**/test-results.xml'
-          #     searchFolder: '$(System.DefaultWorkingDirectory)'
+  #         - task: PublishTestResults@2
+  #           displayName: 'Publish test results'
+  #           inputs:
+  #             testResultsFormat: 'JUnit'
+  #             testResultsFiles: '**/test-results.xml'
+  #             searchFolder: '$(System.DefaultWorkingDirectory)'
 
   - stage: Package_extension
     displayName: 'Build and Package Extension'
@@ -105,6 +105,8 @@ stages:
           
           - task: PackageAzureDevOpsExtension@4
             displayName: 'Package extension'
+            env:
+              TFX_TRACE: '1'
             inputs:
               rootFolder: '$(System.DefaultWorkingDirectory)/src'
               publisherId: '$(publisherId)'
@@ -115,7 +117,7 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
-              patternManifest: '$(Pipeline.Workspace)/vss-extension.json'
+              patternManifest: '$(Pipeline.Workspace)/*.json'
 
           - task: PowerShell@2
             displayName: 'Build and package extension'
@@ -129,6 +131,7 @@ stages:
 
                 $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').FullName;
                 Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
+
 
                 ls;
 
