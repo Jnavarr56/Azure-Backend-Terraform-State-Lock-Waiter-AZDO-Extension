@@ -1,0 +1,32 @@
+{
+    "manifestVersion": 1,
+    "id": "azure-backend-terraform-state-lock-waiter",
+    "name": "Azure Backend Terraform State Lock Waiter",
+    "version": "1.0.0",
+    "publisher": "your-publisher-id",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "description": "Waits until the Terraform state in a project with an Azure backend is not locked",
+    "categories": ["Azure Pipelines"],
+    "icons": {
+        "default": "assets/images/extension-icon.png"
+    },
+    "files": [
+        {
+            "path": "src"
+        }
+    ],
+    "contributions": [
+        {
+            "id": "azure-backend-terraform-state-lock-waiter",
+            "type": "ms.vss-distributed-task.task",
+            "targets": ["ms.vss-distributed-task.tasks"],
+            "properties": {
+                "name": "src"
+            }
+        }
+    ]
+}

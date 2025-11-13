@@ -1,0 +1,10 @@
+node_modules/
+*.vsix
+*.js
+*.js.map
+*.d.ts
+dist/
+buildAndReleaseTask/**/*.js
+buildAndReleaseTask/**/*.js.map
+buildAndReleaseTask/**/*.d.ts
+!clean-compiled.js

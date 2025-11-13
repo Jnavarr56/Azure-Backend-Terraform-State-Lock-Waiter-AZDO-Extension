@@ -1,0 +1,53 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "TerraformStateLeaseChecker",
+    "friendlyName": "Terraform State Lease Checker",
+    "description": "Waits until the Terraform state file in Azure Storage does not have a lease on it",
+    "helpMarkDown": "",
+    "category": "Utility",
+    "author": "Your Name",
+    "version": {
+        "Major": 1,
+        "Minor": 0,
+        "Patch": 0
+    },
+    "instanceNameFormat": "Check Terraform State Lease",
+    "inputs": [
+        {
+            "name": "azureServiceConnection",
+            "type": "connectedService:AzureRM",
+            "label": "Azure Service Connection",
+            "required": true,
+            "helpMarkDown": "Select the Azure Resource Manager Service Connection for accessing the Terraform state file"
+        },
+        {
+            "name": "terraformProjectPath",
+            "type": "string",
+            "label": "Terraform Project Path",
+            "required": true,
+            "helpMarkDown": "Path to the root directory of the Terraform project. If not specified, uses the default working directory"
+        },
+        {
+            "name": "maxWaitTimeSeconds",
+            "type": "string",
+            "label": "Maximum Wait Time (seconds)",
+            "required": false,
+            "defaultValue": "1800",
+            "helpMarkDown": "Maximum time in seconds to wait for the blob to be available. Default is 1800 seconds (30 minutes). The minimum is 60 seconds (1 minute) and the maximum is 7200 seconds (2 hours)."
+        },
+        {
+            "name": "pollIntervalSeconds",
+            "type": "string",
+            "label": "Poll Interval (seconds)",
+            "required": false,
+            "defaultValue": "10",
+            "helpMarkDown": "Interval in seconds between polling attempts. Default is 10 seconds. The minimum is 5 seconds and the maximum is 300 seconds (5 minutes)."
+        }
+    ],
+    "execution": {
+        "Node16": {
+            "target": "index.js"
+        }
+    }
+}

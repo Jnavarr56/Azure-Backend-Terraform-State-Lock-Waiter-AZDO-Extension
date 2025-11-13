@@ -1,0 +1,19 @@
+# Mocha Configuration
+
+## Test Timeout
+timeout: 10000
+
+## Test Files Pattern
+spec: 
+  - "tests/**/_suite.js"
+
+## Reporter
+reporter: spec
+
+## Require Modules
+require:
+  - source-map-support/register
+
+## Node Options
+node-option:
+  - no-warnings
