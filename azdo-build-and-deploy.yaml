@@ -73,7 +73,7 @@ stages:
 
   - stage: PackageExtension
     displayName: 'Build and Package Extension'
-    # dependsOn: Test_and_validate
+    # dependsOn: TestAndValidate
     # condition: succeeded()
     jobs:
       - job: PackageExtension
@@ -149,7 +149,7 @@ stages:
             env:
               TFX_TRACE: '1'
             inputs:
-              rootFolder: '$(Pipeline.Workspace)/SourceCode/src'
+              rootFolder: '$(Pipeline.Workspace)/SourceCode'
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
