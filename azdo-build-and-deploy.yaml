@@ -1,8 +1,7 @@
 trigger: 
 - main
 
-pool:
-  vmImage: "ubuntu-latest"
+pool: 'DevOps_Automation_Windows'
 
 variables:
   publisherId: 'jorge-codes'        
@@ -34,16 +33,16 @@ stages:
             displayName: 'Add test .env file'
             inputs:
               azureSubscription: DevOpsUserAccessAutomation (Dev/Test)
-              scriptType: 'bash'
+              scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | jq -r  '.value' > ./tests/.env
+                (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env
+                ls ./tests;
           
           - task: Npm@1
             displayName: 'Run unit and integration tests'
             inputs:
-              command: 'custom'
-              customCommand: 'test'
+              command: 'test'
           
           - task: PublishTestResults@2
             displayName: 'Publish test results'
@@ -80,19 +79,19 @@ stages:
             displayName: 'Clean previous build files'
             inputs:
               command: 'custom'
-              customCommand: 'clean'
+              customCommand: 'run clean'
 
           - task: Npm@1
             displayName: 'Compile TypeScript'
             inputs:
               command: 'custom'
-              customCommand: 'buiild'
+              customCommand: 'run build'
 
           - task: Npm@1
             displayName: 'Package extension'
             inputs:
               command: 'custom'
-              customCommand: 'package'
+              customCommand: 'run package'
 
           - task: AzureCLI@2
             inputs:
