@@ -10,7 +10,8 @@ variables:
   extensionName: 'Azure Backend Terraform State Lock Waiter'
   artifactName: 'vsix-artifact'
   visibility: 'private'
-
+  marketplaceServiceConnection: 'c761e98f-f903-47cb-aec0-cfba3b486dae'
+  
 stages:
   - stage: Test_and_validate
     displayName: 'Run Tests and Validate Code'
@@ -18,13 +19,6 @@ stages:
       - job: RunTests
         displayName: 'Execute tests'
         steps:
-          - task: AzureKeyVault@2
-            inputs:
-              azureSubscription: DevOpsUserAccessAutomation
-              KeyVaultName: azpdovault
-              SecretsFilter: '
-              RunAsPreJob: true
-
           - task: NodeTool@0
             displayName: Use Node (specified in .nvmrc file)
             inputs:
@@ -142,16 +136,27 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: TfxInstaller@4
-                  displayName: 'Install TFX CLI'
+                - task: AzureCLI@2
                   inputs:
-                    version: "v0.x"
+                    azureSubscription: 'DevOpsUserAccessAutomation'
+                    scriptType: 'pscore'
+                    scriptLocation: 'inlineScript'
+                    useGlobalConfig: true
+                    inlineScript: |
+                      $accessToken = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query "accessToken" --output tsv
+                      write-host "##vso[task.setsecret]$accessToken"
+                      write-host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
+                      
+                # - task: TfxInstaller@4
+                #   displayName: 'Install TFX CLI'
+                #   inputs:
+                #     version: "v0.x"
                 
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
                   inputs:
                     connectTo: 'VsTeam'
-                    connectedServiceName: 'marketplace-connection'
+                    connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
                     vsixFile: '$(Pipeline.Workspace)/$(artifactName)/*.vsix'
                     publisherId: '$(publisherId)'
