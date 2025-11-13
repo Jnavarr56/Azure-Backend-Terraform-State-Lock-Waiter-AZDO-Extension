@@ -51,7 +51,7 @@ stages:
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                cd '$(Pipeline.Workspace)/SourceCode/tests';
+                cd '$(Pipeline.Workspace)/SourceCode/task/tests';
                 (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > .env;
                 ls -la .| grep '.env';
           
