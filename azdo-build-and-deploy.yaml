@@ -69,7 +69,7 @@ stages:
             displayName: 'Publish test results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: '$(Pipeline.Workspace)/SourceCode/test-results.xml'
+              testResultsFiles: '$(Pipeline.Workspace)/SourceCode/task/test-results.xml'
 
   - stage: PackageExtension
     displayName: 'Build and Package Extension'

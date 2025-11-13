@@ -68,5 +68,8 @@
                 "name": "task"
             }
         }
+    ],
+    "galleryFlags": [
+        "Public"
     ]
 }
