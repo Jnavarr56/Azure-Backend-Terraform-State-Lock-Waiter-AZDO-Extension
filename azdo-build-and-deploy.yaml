@@ -125,13 +125,15 @@ stages:
                 npm run build;
                 npm run package;
 
-                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').Name;
-                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName"
+                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').FullName;
+                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName;
+
+                
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
             inputs:
-              PathtoPublish: '$(System.DefaultWorkingDirectory)/$(vsixFileName)'
+              PathtoPublish: '$(vsixFileName)'
               ArtifactName: 'pack.vsix'
               publishLocation: 'Container'
 
