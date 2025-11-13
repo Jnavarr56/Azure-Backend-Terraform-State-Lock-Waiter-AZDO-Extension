@@ -21,7 +21,7 @@ stages:
   #       steps:
   #         - checkout: self
   #           displayName: 'Checkout source code'
-  #           path: '$(Pipeline.Workspace)/SourceCode'
+  #           path: 'SourceCode'
             
   #         - task: NodeTool@0
   #           displayName: Use Node (specified in .nvmrc file)
@@ -80,7 +80,7 @@ stages:
 
           - checkout: self
             displayName: 'Checkout source code'
-            path: '$(Pipeline.Workspace)/SourceCode'
+            path: 'SourceCode'
 
           - task: TfxInstaller@4
             displayName: 'Install TFX CLI'
