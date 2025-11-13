@@ -223,8 +223,8 @@ stages:
                     pwsh: true
                     script: |
                       ls $(Pipeline.Workspace);
-                      ls $(Pipeline.Workspace)\$(artifactName);
-                      $vsixFileFullName = (Get-ChildItem -Path '$(Pipeline.Workspace)\$(artifactName)' -Filter '*.vsix' -Recurse).FullName;
+                      ls $(Pipeline.Workspace)/$(artifactName);
+                      $vsixFileFullName = (Get-ChildItem -Path '$(Pipeline.Workspace)/$(artifactName)' -Filter '*.vsix' -Recurse).FullName;
                       Write-Output "VSIX File Full Name: $vsixFileFullName";
                       Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
