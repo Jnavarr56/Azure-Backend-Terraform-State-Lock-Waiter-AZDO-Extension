@@ -73,8 +73,8 @@ stages:
 
   - stage: PackageExtension
     displayName: 'Build and Package Extension'
-    # dependsOn: TestAndValidate
-    # condition: succeeded()
+    dependsOn: TestAndValidate
+    condition: succeeded()
     jobs:
       - job: PackageExtension
         displayName: 'Create VSIX package'
