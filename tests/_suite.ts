@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 
 import { ClientSecretCredential } from '@azure/identity';
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobLeaseClient, BlobServiceClient, RestError } from '@azure/storage-blob';
 
 const TESTS_ROOT_PATH = path.join(__dirname, 'test-cases');
 const TASK_JSON_PATH = path.join(__dirname, '..', 'src', 'task.json');
@@ -80,9 +80,10 @@ function loadMockAzureRMServiceConnectionEnvVars(dotEnvVarNamePrefix: AzureRMSer
 
 async function prepareMockTestRunner(testDirectoryName: string): Promise<ttm.MockTestRunner> {
     const testPath = getAbsPathToTest(testDirectoryName);
-    const tr: ttm.MockTestRunner = new ttm.MockTestRunner();
 
-    await tr.LoadAsync(testPath, TASK_JSON_PATH);
+    const tr: ttm.MockTestRunner = await new ttm.MockTestRunner().LoadAsync(testPath, TASK_JSON_PATH);
+
+    // tr = await tr.LoadAsync(testPath, TASK_JSON_PATH);
     await tr.runAsync();
 
     return tr;
@@ -104,7 +105,9 @@ interface TerraformState {
     };
 }
 
-async function simulateRemoteStateFileLeaseAcquisition(testCaseDirName: string, seconds: number): Promise<void> {
+async function resetSimulateRemoteStateFileLease(
+    testCaseDirName: string
+): Promise<{ blobLeaseClient: BlobLeaseClient; blobName: string; containerName: string; storageAccountName: string }> {
     const servicePrincipalId = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_SERVICE_PRINCIPAL_ID']!;
     const servicePrincipalKey = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_SERVICE_PRINCIPAL_KEY']!;
     const tenantId = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_TENANT_ID']!;
@@ -127,13 +130,27 @@ async function simulateRemoteStateFileLeaseAcquisition(testCaseDirName: string, 
 
     const blobServiceClient = new BlobServiceClient(`https://${storageAccountName}.blob.core.windows.net`, credential);
 
-    console.log(
-        `-- simulating lease acquisition for ${blobName} in container ${containerName} in storage account ${storageAccountName} for ${seconds} seconds`
-    );
     const containerClient = blobServiceClient.getContainerClient(containerName);
     const blobClient = containerClient.getBlobClient(blobName);
     const blobLeaseClient = blobClient.getBlobLeaseClient();
 
+    await blobLeaseClient.releaseLease().catch((err) => {
+        if (err instanceof RestError && err.code === 'LeaseIdMismatchWithLeaseOperation') {
+            console.log('-- no existing lease to release');
+        } else {
+            throw err;
+        }
+    });
+
+    return { blobLeaseClient, blobName, containerName, storageAccountName };
+}
+
+async function simulateRemoteStateFileLeaseAcquisition(testCaseDirName: string, seconds: number): Promise<void> {
+    const { blobLeaseClient, blobName, containerName, storageAccountName } =
+        await resetSimulateRemoteStateFileLease(testCaseDirName);
+    console.log(
+        `-- simulating lease acquisition for ${blobName} in container ${containerName} in storage account ${storageAccountName} for ${seconds} seconds`
+    );
     let lease;
     if (seconds > 60) {
         lease = await blobLeaseClient.acquireLease(-1);
@@ -155,6 +172,8 @@ async function executeSuccessfulNoLeaseTestRun(
     printTaskOutput: boolean = false,
     testName?: string
 ): Promise<void> {
+    await resetSimulateRemoteStateFileLease(testCaseDirName);
+
     const tr = await prepareMockTestRunner(testCaseDirName);
 
     if (printTaskOutput) {
@@ -186,7 +205,8 @@ async function executeSuccessfulNoLeaseTestRun(
     }
     assert.equal(
         tr.stdout.includes('Lease Status: unlocked, Lease State: available') ||
-            tr.stdout.includes('Lease Status: unlocked, Lease State: expired'),
+            tr.stdout.includes('Lease Status: unlocked, Lease State: expired') ||
+            tr.stdout.includes('Lease Status: unlocked, Lease State: broken'),
         true,
         'should indicate lease status unlocked'
     );
@@ -277,7 +297,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     this.timeout(10000);
 
     beforeEach(function () {
-        process.env['system.debug'] = 'false';
+        process.env['system.debug'] = 'true';
         loadMockAzureRMServiceConnectionEnvVars('TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_');
         loadMockAzureRMServiceConnectionEnvVars('TEST_UNAUTHORIZED_AZURERM_SERVICE_CONNECTION_');
     });
@@ -294,7 +314,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         );
     });
 
-    it('1: should fail when .terraform directory is missing', async function () {
+    it('1: should fail when .terraform state file is missing', async function () {
         const tr = await prepareMockTestRunner('1.no-dot-terraform-tfstate-file');
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
@@ -428,6 +448,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('13: [no workspaces] should succeed when remote terraform.tfstate file has no lock (blob lease) ', async function () {
         const TEST_CASE_TIMEOUT_MS = minutesMs(1.5);
+
         const TEST_CASE_DIR_NAME = '13.without-workspaces-terraform-tfstate-file-no-lease';
         const PRINT_TASK_OUTPUT = false;
 
@@ -437,13 +458,13 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     });
 
     it('14: [no workspaces] should succeed when remote terraform.tfstate file has a lock (blob lease)', async function () {
-        const TEST_CASE_TIMEOUT_MS = minutesMs(5);
+        const TEST_CASE_TIMEOUT_MS = minutesMs(1.5);
         const TEST_CASE_DIR_NAME = '14.without-workspaces-terraform-tfstate-file-has-lease';
         const PRINT_TASK_OUTPUT = false;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
-        await executeSuccessfulActiveLeaseTestRun(TEST_CASE_DIR_NAME, 60, PRINT_TASK_OUTPUT, this.test?.title);
+        await executeSuccessfulActiveLeaseTestRun(TEST_CASE_DIR_NAME, 30, PRINT_TASK_OUTPUT, this.test?.title);
     });
 
     it('15: [workspaces] should succeed when remote terraform.tfstate file has no lock (blob lease) ', async function () {
@@ -463,7 +484,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
-        await executeSuccessfulActiveLeaseTestRun(TEST_CASE_DIR_NAME, 60, PRINT_TASK_OUTPUT, this.test?.title);
+        await executeSuccessfulActiveLeaseTestRun(TEST_CASE_DIR_NAME, 30, PRINT_TASK_OUTPUT, this.test?.title);
     });
 
     it('17: [no workspaces] should fail when terraform backend storage account does not exist', async function () {
@@ -522,11 +543,10 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         const TEST_CASE_DIR_NAME = '21.without-workspaces-maxWaitTimeSeconds-exceeded';
         const TEST_CASE_TIMEOUT_MS = minutesMs(5);
         const PRINT_TASK_OUTPUT = false;
-        const LEASE_DURATION_SECONDS = 180;
+        const LEASE_DURATION_SECONDS = 100;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
-        console.log(`-- maxWaitTimeSeconds SET TO 120 SECONDS`);
         await simulateRemoteStateFileLeaseAcquisition(TEST_CASE_DIR_NAME, LEASE_DURATION_SECONDS);
 
         const tr = await prepareMockTestRunner(TEST_CASE_DIR_NAME);
@@ -539,7 +559,6 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
-        console.log(tr.errorIssues[0]);
 
         assert.equal(
             tr.stdout.includes('Terraform state file is currently leased. Waiting...') &&
@@ -553,6 +572,6 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
             'should indicate max wait time exceeded'
         );
 
-        await new Promise((resolve) => setTimeout(resolve, (LEASE_DURATION_SECONDS - 120 + 5) * 1000));
+        await new Promise((resolve) => setTimeout(resolve, (LEASE_DURATION_SECONDS - 60 + 5) * 1000));
     });
 });

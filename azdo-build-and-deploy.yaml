@@ -23,11 +23,6 @@ stages:
             inputs:
               versionSource: 'fromFile'
               versionFilePath: '.nvmrc'
-          
-          - task: Npm@1
-            displayName: 'Install dependencies'
-            inputs:
-              command: 'ci'
 
           - task: AzureCLI@2
             displayName: 'Add test .env file'
@@ -39,11 +34,12 @@ stages:
                 (az appconfig kv show  --name aztappconfig --key JORGE_AZDO_CUSTOM_TASK_EXTENSION_0_TEST_DOTENV | ConvertFrom-Json).value > ./tests/.env
                 ls ./tests;
           
-          - task: Npm@1
-            displayName: 'Run unit and integration tests'
+          - task: PowerShell@2
             inputs:
-              command: 'custom'
-              customCommand: 'run test'
+              targetType: 'inline'
+              script: |
+                npm install;
+                npm test;
           
           - task: PublishTestResults@2
             displayName: 'Publish test results'
@@ -70,29 +66,14 @@ stages:
             inputs:
               versionSource: 'fromFile'
               versionFilePath: '.nvmrc'
-          
-          - task: Npm@1
-            displayName: 'Install dependencies'
-            inputs:
-              command: 'ci'
 
-          - task: Npm@1
-            displayName: 'Clean previous build files'
+          - task: PowerShell@2
             inputs:
-              command: 'custom'
-              customCommand: 'run clean'
-
-          - task: Npm@1
-            displayName: 'Compile TypeScript'
-            inputs:
-              command: 'custom'
-              customCommand: 'run build'
-
-          - task: Npm@1
-            displayName: 'Package extension'
-            inputs:
-              command: 'custom'
-              customCommand: 'run package'
+              targetType: 'inline'
+              script: |
+                npm run clean;
+                npm run build;
+                npm run package;
 
           - task: AzureCLI@2
             inputs:

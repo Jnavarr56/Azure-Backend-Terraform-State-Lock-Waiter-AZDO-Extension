@@ -6,5 +6,7 @@ const runner: mr.TaskMockRunner = new mr.TaskMockRunner(taskPath);
 
 runner.setInput('azureServiceConnection', process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_NAME'] as string);
 runner.setInput('terraformProjectPath', path.resolve(__dirname));
+runner.setInput('maxWaitTimeSeconds', '60');
+runner.setInput('pollIntervalSeconds', '5');
 
 runner.run();

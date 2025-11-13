@@ -25,9 +25,9 @@ const maxWaitTimeSeconds_MIN = 60;
 const maxWaitTimeSeconds_MAX = 7200;
 const maxWaitTimeSeconds_DEFAULT = '1800';
 
-const pollIntervalSeconds_MIN = 10;
+const pollIntervalSeconds_MIN = 5;
 const pollIntervalSeconds_MAX = 300;
-const pollIntervalSeconds_DEFAULT = '30';
+const pollIntervalSeconds_DEFAULT = '10';
 
 async function run() {
     try {
@@ -231,7 +231,12 @@ async function run() {
 
                 console.log(`Lease Status: ${leaseStatus}, Lease State: ${leaseState}`);
 
-                if (leaseState === 'available' || leaseStatus === 'unlocked') {
+                if (
+                    leaseState === 'available' ||
+                    leaseState == 'expired' ||
+                    leaseState == 'broken' ||
+                    leaseStatus === 'unlocked'
+                ) {
                     console.log('✓ Terraform state file is not leased. Proceeding...');
                     break;
                 }
