@@ -132,7 +132,7 @@ stages:
             displayName: 'Publish VSIX artifact'
             inputs:
               PathtoPublish: '$(System.DefaultWorkingDirectory)/$(vsixFileName)'
-              ArtifactName: '$(vsixFileName)'
+              ArtifactName: 'pack.vsix'
               publishLocation: 'Container'
 
   - stage: Publish_to_marketplace
@@ -160,9 +160,9 @@ stages:
                       
                 - task: DownloadPipelineArtifact@1
                   inputs:
-                    artifactName: $(vsixFileName)
-                    downloadPath: '$(Pipeline.Workspace)/$(vsixFileName)
-                
+                    artifactName: 'pack.vsix'
+                    downloadPath: '$(Pipeline.Workspace)/pack.vsix'
+
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
                   inputs:
