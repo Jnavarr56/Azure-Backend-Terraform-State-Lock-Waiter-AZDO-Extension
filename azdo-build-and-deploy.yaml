@@ -120,20 +120,13 @@ stages:
               patternManifest: '$(Pipeline.Workspace)/*.json'
 
           - task: PowerShell@2
-            displayName: 'Build and package extension'
+            displayName: 'Get filename'
             inputs:
               targetType: 'inline'
               pwsh: true
               script: |
-                npm run clean;
-                npm run build;
-                npm run package;
-
                 $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').FullName;
                 Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
-
-
-                ls;
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
