@@ -5,7 +5,7 @@
     "main": "buildAndReleaseTask/index.js",
     "scripts": {
         "build": "tsc",
-        "package": "tfx extension create --manifest-globs vss-extension.json",
+        "package": "tfx extension create --manifest-globs ../vss-extension.json",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",
         "format": "prettier --write \"**/*.{ts,json,md}\"",
