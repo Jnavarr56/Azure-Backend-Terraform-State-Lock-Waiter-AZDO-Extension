@@ -165,15 +165,23 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
-                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
+                $vsixFileFullName = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
+                Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
             inputs:
               PathtoPublish: '$(vsixFileName)'
-              ArtifactName: '$(artifactName)'
+              ArtifactName: 'package'
               publishLocation: 'Container'
+
+          - task: PowerShell@2
+            displayName: 'Remove local artifact'
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              script: |
+                Remove-Item -LiteralPath '$(vsixFileName)' -Force -ErrorAction SilentlyContinue;
 
   - stage: Publish_to_marketplace
     displayName: 'Publish to Marketplace'
@@ -188,7 +196,7 @@ stages:
             deploy:
               steps:
                 - task: AzureCLI@2
-                  displayName: 'Set marketplace service connection auth token'
+                  displayName: 'Set marketplace service connection auth token and remove localartifact if present'
                   inputs:
                     azureSubscription: 'DevOpsUserAccessAutomation'
                     scriptType: 'pscore'
@@ -201,7 +209,7 @@ stages:
                       
                 - task: DownloadPipelineArtifact@1
                   inputs:
-                    artifactName: '$(artifactName)'
+                    artifactName: 'package'
                     downloadPath: '$(Pipeline.Workspace)'
 
                 - task: PowerShell@2
@@ -210,8 +218,8 @@ stages:
                     targetType: 'inline'
                     pwsh: true
                     script: |
-                      $vsixFileName = (Get-ChildItem -Path '$(Pipeline.Workspace)' -Filter '*.vsix' -Recurse).FullName;
-                      Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
+                      $vsixFileFullName = (Get-ChildItem -Path '$(Pipeline.Workspace)' -Filter '*.vsix' -Recurse).FullName;
+                      Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
@@ -219,7 +227,7 @@ stages:
                     connectTo: 'VsTeam'
                     connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
-                    vsixFile: '$(vsixFileName)'
+                    vsixFile: '$(vsixFileFullName)'
                     publisherId: '$(publisherId)'
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'
