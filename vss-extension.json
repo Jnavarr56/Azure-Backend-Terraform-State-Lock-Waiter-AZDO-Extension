@@ -11,8 +11,48 @@
     ],
     "description": "Waits until the Terraform state in a project with an Azure backend is not locked",
     "categories": ["Azure Pipelines"],
+    "tags": [
+        "terraform",
+        "azure",
+        "state",
+        "lock",
+        "lease",
+        "azurerm",
+        "storage",
+        "backend",
+        "wait",
+        "deployment",
+        "infrastructure",
+        "iac",
+        "devops",
+        "pipeline",
+        "concurrency"
+    ],
     "icons": {
         "default": "assets/images/extension-icon.png"
+    },
+    "content": {
+        "details": {
+            "path": "overview.md"
+        }
+    },
+    "links": {
+        "home": {
+            "uri": "https://github.com/Jnavarr56/Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension"
+        },
+        "getstarted": {
+            "uri": "https://github.com/Jnavarr56/Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension"
+        },
+        "repository": {
+            "uri": "https://github.com/Jnavarr56/Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension"
+        },
+        "support": {
+            "uri": "https://github.com/Jnavarr56/Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension/issues"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "uri": "https://github.com/Jnavarr56/Azure-Backend-Terraform-State-Lock-Waiter-AZDO-Extension"
     },
     "files": [
         {
