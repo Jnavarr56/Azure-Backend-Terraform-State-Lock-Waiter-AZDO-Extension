@@ -186,7 +186,7 @@ stages:
                       
                 - task: DownloadPipelineArtifact@1
                   inputs:
-                    artifactName: 'package.vsix'
+                    artifactName: '$(artifactName)'
                     downloadPath: '$(Pipeline.Workspace)/$(artifactName)'
 
                 - task: PublishAzureDevOpsExtension@4
