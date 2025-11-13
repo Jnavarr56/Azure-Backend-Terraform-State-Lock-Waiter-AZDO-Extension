@@ -1,7 +1,7 @@
 trigger: 
 - main
 
-pool: 'DevOps_Automation_Windows'
+pool: 'ubuntu-latest'
 
 variables:
   publisherId: 'jorge-codes'        
@@ -35,10 +35,12 @@ stages:
                 ls ./tests;
           
           - task: PowerShell@2
+            displayName: 'Install dependencies and run tests (unit and integration)'
             inputs:
               targetType: 'inline'
+              pwsh: true
               script: |
-                npm install;
+                npm ci;
                 npm test;
           
           - task: PublishTestResults@2
@@ -68,14 +70,17 @@ stages:
               versionFilePath: '.nvmrc'
 
           - task: PowerShell@2
+            displayName: 'Build and package extension'
             inputs:
               targetType: 'inline'
+              pwsh: true
               script: |
                 npm run clean;
                 npm run build;
                 npm run package;
 
           - task: AzureCLI@2
+            displayName: 'Set marketplace service connection auth token'
             inputs:
               azureSubscription: 'DevOpsUserAccessAutomation'
               scriptType: 'pscore'

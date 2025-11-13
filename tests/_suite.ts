@@ -48,6 +48,7 @@ function printNonDebugLines(tr: ttm.MockTestRunner, testCaseName?: string): void
         tr.stdout
             .split('\n')
             .filter((l) => !l.match(/^##vso(.*)/))
+            .map((l) => `_${l}`)
             .join('\n'),
         tr.stderr
     );
@@ -57,7 +58,7 @@ type AzureRMServiceConnectionVarPrefix =
     | 'TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_'
     | 'TEST_UNAUTHORIZED_AZURERM_SERVICE_CONNECTION_';
 
-// https://github.com/microsoft/azure-pipelines-task-lib/issues/291
+//https://github.com/microsoft/azure-pipelines-task-lib/issues/291
 function loadMockAzureRMServiceConnectionEnvVars(dotEnvVarNamePrefix: AzureRMServiceConnectionVarPrefix): void {
     const serviceConnectionName = process.env[`${dotEnvVarNamePrefix}NAME`];
 
@@ -83,7 +84,7 @@ async function prepareMockTestRunner(testDirectoryName: string): Promise<ttm.Moc
 
     const tr: ttm.MockTestRunner = await new ttm.MockTestRunner().LoadAsync(testPath, TASK_JSON_PATH);
 
-    // tr = await tr.LoadAsync(testPath, TASK_JSON_PATH);
+    tr = await tr.LoadAsync(testPath, TASK_JSON_PATH);
     await tr.runAsync();
 
     return tr;
@@ -128,7 +129,7 @@ async function resetSimulateRemoteStateFileLease(
         blobName += `env:${environmentName}`;
     }
 
-    const blobServiceClient = new BlobServiceClient(`https://${storageAccountName}.blob.core.windows.net`, credential);
+    const blobServiceClient = new BlobServiceClient(`https:{storageAccountName}.blob.core.windows.net`, credential);
 
     const containerClient = blobServiceClient.getContainerClient(containerName);
     const blobClient = containerClient.getBlobClient(blobName);
@@ -293,7 +294,6 @@ async function executeSuccessfulActiveLeaseTestRun(
 }
 
 describe('Azure Backend Terraform State Lock Waiter Tests', function () {
-    // Set timeout for tests
     this.timeout(10000);
 
     beforeEach(function () {
@@ -304,6 +304,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('0: should fail when .terraform directory is missing', async function () {
         const tr = await prepareMockTestRunner('0.no-dot-terraform-directory');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -316,11 +317,12 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('1: should fail when .terraform state file is missing', async function () {
         const tr = await prepareMockTestRunner('1.no-dot-terraform-tfstate-file');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
         assert.equal(
-            tr.errorIssues[0].includes('Terraform state file not found at: '),
+            tr.errorIssues[0].includes('Terraform state file not found at:'),
             true,
             'should throw indicate missing file'
         );
@@ -328,6 +330,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('2: should fail when terraformProjectPath input is to a nonexistent directory', async function () {
         const tr = await prepareMockTestRunner('2.invalid-terraformProjectPath-input-doesnt-exist');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -340,6 +343,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('3: should fail when maxWaitTimeSeconds input is not an integer', async function () {
         const tr = await prepareMockTestRunner('3.invalid-maxWaitTimeSeconds-input-not-an-integer');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -352,6 +356,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('4: should fail when maxWaitTimeSeconds input is below minimum', async function () {
         const tr = await prepareMockTestRunner('4.invalid-maxWaitTimeSeconds-input-below-minimum');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -364,6 +369,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('5: should fail when maxWaitTimeSeconds input is above maximum', async function () {
         const tr = await prepareMockTestRunner('5.invalid-maxWaitTimeSeconds-input-above-maximum');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -376,6 +382,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('6: should fail when maxWaitTimeSeconds input is negative', async function () {
         const tr = await prepareMockTestRunner('6.invalid-maxWaitTimeSeconds-input-negative');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -388,6 +395,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('7: should fail when pollIntervalSeconds input is not an integer', async function () {
         const tr = await prepareMockTestRunner('7.invalid-pollIntervalSeconds-input-not-an-integer');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -400,6 +408,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('8: should fail when pollIntervalSeconds input is below minimum', async function () {
         const tr = await prepareMockTestRunner('8.invalid-pollIntervalSeconds-input-below-minimum');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -412,6 +421,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('9: should fail when pollIntervalSeconds input is above maximum', async function () {
         const tr = await prepareMockTestRunner('9.invalid-pollIntervalSeconds-input-above-maximum');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -424,6 +434,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('11: should fail when terraform.tfstate file is not valid JSON', async function () {
         const tr = await prepareMockTestRunner('11.invalid-terraform-tfstate-file-json');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -436,6 +447,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
 
     it('12: should fail when terraform.tfstate file is not azurerm backend', async function () {
         const tr = await prepareMockTestRunner('12.terraform-tfstate-file-not-azurerm-backend');
+        printNonDebugLines(tr, this.test?.title);
         console.log(`-- task succeeded: ${tr.succeeded}`);
         assert.equal(tr.succeeded, false, 'should have failed');
         assert.equal(tr.errorIssues.length, 1, 'should have 1 error issue');
@@ -450,7 +462,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         const TEST_CASE_TIMEOUT_MS = minutesMs(1.5);
 
         const TEST_CASE_DIR_NAME = '13.without-workspaces-terraform-tfstate-file-no-lease';
-        const PRINT_TASK_OUTPUT = false;
+        const PRINT_TASK_OUTPUT = true;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
@@ -460,7 +472,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     it('14: [no workspaces] should succeed when remote terraform.tfstate file has a lock (blob lease)', async function () {
         const TEST_CASE_TIMEOUT_MS = minutesMs(1.5);
         const TEST_CASE_DIR_NAME = '14.without-workspaces-terraform-tfstate-file-has-lease';
-        const PRINT_TASK_OUTPUT = false;
+        const PRINT_TASK_OUTPUT = true;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
@@ -470,7 +482,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     it('15: [workspaces] should succeed when remote terraform.tfstate file has no lock (blob lease) ', async function () {
         const TEST_CASE_TIMEOUT_MS = minutesMs(1.5);
         const TEST_CASE_DIR_NAME = '15.with-workspaces-terraform-tfstate-file-no-lease';
-        const PRINT_TASK_OUTPUT = false;
+        const PRINT_TASK_OUTPUT = true;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
@@ -480,7 +492,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     it('16: [workspaces] should succeed when remote terraform.tfstate file has a lock (blob lease)', async function () {
         const TEST_CASE_TIMEOUT_MS = minutesMs(5);
         const TEST_CASE_DIR_NAME = '16.with-workspaces-terraform-tfstate-file-has-lease';
-        const PRINT_TASK_OUTPUT = false;
+        const PRINT_TASK_OUTPUT = true;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
 
@@ -493,6 +505,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         const tr = await prepareMockTestRunner(
             '17.without-workspaces-terraform-tfstate-file-nonexistent-storage-account'
         );
+        printNonDebugLines(tr, this.test?.title);
 
         console.log(`-- task succeeded: ${tr.succeeded}`);
 
@@ -511,6 +524,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         this.timeout(minutesMs(2));
 
         const tr = await prepareMockTestRunner('18.without-workspaces-terraform-tfstate-file-nonexistent-container');
+        printNonDebugLines(tr, this.test?.title);
 
         console.log(`-- task succeeded: ${tr.succeeded}`);
 
@@ -527,6 +541,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         this.timeout(minutesMs(2));
 
         const tr = await prepareMockTestRunner('19.without-workspaces-terraform-tfstate-file-nonexistent-blob');
+        printNonDebugLines(tr, this.test?.title);
 
         console.log(`-- task succeeded: ${tr.succeeded}`);
 
@@ -542,7 +557,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
     it('20: [no workspaces] should fail when the max wait time is exceeded', async function () {
         const TEST_CASE_DIR_NAME = '21.without-workspaces-maxWaitTimeSeconds-exceeded';
         const TEST_CASE_TIMEOUT_MS = minutesMs(5);
-        const PRINT_TASK_OUTPUT = false;
+        const PRINT_TASK_OUTPUT = true;
         const LEASE_DURATION_SECONDS = 100;
 
         this.timeout(TEST_CASE_TIMEOUT_MS);
@@ -550,6 +565,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
         await simulateRemoteStateFileLeaseAcquisition(TEST_CASE_DIR_NAME, LEASE_DURATION_SECONDS);
 
         const tr = await prepareMockTestRunner(TEST_CASE_DIR_NAME);
+        printNonDebugLines(tr, this.test?.title);
 
         if (PRINT_TASK_OUTPUT) {
             printNonDebugLines(tr, this.test?.title);
