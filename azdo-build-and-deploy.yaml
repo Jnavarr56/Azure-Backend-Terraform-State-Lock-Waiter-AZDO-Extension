@@ -165,13 +165,17 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                $vsixFileFullName = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse).FullName;
-                Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
+                $childItem = (Get-ChildItem -Path '.' -Filter '*.vsix' -Recurse);
+                $vsixFileName = $childItem.Name;
+                $vsixFileFullName = $childItem.FullName;
 
-          - task: PublishBuildArtifacts@1
+                Move-Item -Path $vsixFileFullName -Destination $(Pipeline.Workspace)/extension.vsix -Force;
+                Rename-Item -Path $vsixFileFullName -NewName "extension.vsix";
+
+          - task: PublishBuildArtifacts@2
             displayName: 'Publish VSIX artifact'
             inputs:
-              PathtoPublish: '$(vsixFileFullName)'
+              PathtoPublish: 'extension.vsix'
               ArtifactName: 'package'
               publishLocation: 'Container'
 
@@ -181,7 +185,7 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                Remove-Item -LiteralPath '$(vsixFileFullName)' -Force -ErrorAction SilentlyContinue;
+                Remove-Item -LiteralPath $(Pipeline.Workspace)/extension.vsix -Force -ErrorAction SilentlyContinue;
 
   - stage: Publish_to_marketplace
     displayName: 'Publish to Marketplace'
@@ -207,10 +211,9 @@ stages:
                       Write-Host "##vso[task.setsecret]$accessToken"
                       Write-Host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
                       
-                - task: DownloadPipelineArtifact@1
+                - task: DownloadPipelineArtifact@2
                   inputs:
                     artifactName: 'package'
-                    downloadPath: '$(Pipeline.Workspace)'
 
                 - task: PowerShell@2
                   displayName: 'Get filename'
