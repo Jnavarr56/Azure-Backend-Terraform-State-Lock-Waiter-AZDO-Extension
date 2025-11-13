@@ -184,7 +184,6 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                cd '$(Pipeline.Workspace)';
                 Remove-Item -LiteralPath $(vsixFileFullName) -Force -ErrorAction SilentlyContinue;
 
   - stage: Publish_to_marketplace
@@ -222,11 +221,14 @@ stages:
                     targetType: 'inline'
                     pwsh: true
                     script: |
-                      ls $(Pipeline.Workspace);
-                      ls $(Pipeline.Workspace)/$(artifactName);
                       $vsixFileFullName = (Get-ChildItem -Path '$(Pipeline.Workspace)/$(artifactName)' -Filter '*.vsix' -Recurse).FullName;
                       Write-Output "VSIX File Full Name: $vsixFileFullName";
                       Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
+
+      ]        - task: TfxInstaller@4
+                  displayName: 'Install TFX CLI'
+                  inputs:
+                    version: "v0.x"
 
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
