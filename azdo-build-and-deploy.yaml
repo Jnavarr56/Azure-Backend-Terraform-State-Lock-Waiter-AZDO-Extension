@@ -8,7 +8,7 @@ variables:
   publisherId: 'jorge-codes'        
   extensionId: 'azure-backend-terraform-state-lock-waiter'        
   extensionName: 'Azure Backend Terraform State Lock Waiter'
-  artifactName: 'package.vsix'
+  artifactName: 'package'
   visibility: 'private'
   marketplaceServiceConnection: 'd7744d61-b6a6-40d9-b5f7-ed766d9a9584'
   
@@ -204,13 +204,22 @@ stages:
                     artifactName: '$(artifactName)'
                     downloadPath: '$(Pipeline.Workspace)/$(artifactName)'
 
+                - task: PowerShell@2
+                  displayName: 'Get filename'
+                  inputs:
+                    targetType: 'inline'
+                    pwsh: true
+                    script: |
+                      $vsixFileName = (Get-ChildItem -Path '$(artifactName)' -Filter '*.vsix' -Recurse).FullName;
+                      Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
+
                 - task: PublishAzureDevOpsExtension@4
                   displayName: 'Publish to marketplace'
                   inputs:
                     connectTo: 'VsTeam'
                     connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
-                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)'
+                    vsixFile: '$(vsixFileName)'
                     publisherId: '$(publisherId)'
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'
