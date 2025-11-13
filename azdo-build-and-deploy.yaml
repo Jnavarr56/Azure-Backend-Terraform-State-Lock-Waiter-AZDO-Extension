@@ -71,11 +71,12 @@ stages:
               versionFilePath: '.nvmrc'
 
           - task: PowerShell@2
-            displayName: 'Build and package extension'
+            displayName: 'Build extension'
             inputs:
               targetType: 'inline'
               pwsh: true
               script: |
+                npm ci;
                 npm run build;
                 # npm run package;
 
