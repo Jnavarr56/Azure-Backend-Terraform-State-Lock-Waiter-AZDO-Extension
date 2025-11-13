@@ -5,10 +5,11 @@ pool:
   vmImage: "ubuntu-latest"
 
 variables:
-  publisherId: 'my-publisher-id'        # Update with your publisher ID
-  extensionId: 'my-extension-id'        # Update with your extension ID
-  extensionName: 'My Extension Name'    # Update with your extension name
+  publisherId: 'jorge-codes'        
+  extensionId: 'azure-backend-terraform-state-lock-waiter'        
+  extensionName: 'Azure Backend Terraform State Lock Waiter'
   artifactName: 'vsix-artifact'
+  visibility: 'private'
 
 stages:
   - stage: Test_and_validate
@@ -119,7 +120,7 @@ stages:
               extensionVersion: '$(QueryVersion.Extension.Version)'
               updateTasksVersion: true
               updateTasksVersionType: 'patch'
-              extensionVisibility: 'private'
+              extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
           
           - task: PublishBuildArtifacts@1
@@ -157,5 +158,5 @@ stages:
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'
                     updateTasksVersion: false
-                    extensionVisibility: 'private'
+                    extensionVisibility: '$(visibility)' 
                     extensionPricing: 'free'

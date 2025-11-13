@@ -3,7 +3,7 @@
     "id": "azure-backend-terraform-state-lock-waiter",
     "name": "Azure Backend Terraform State Lock Waiter",
     "version": "1.0.0",
-    "publisher": "your-publisher-id",
+    "publisher": "jorge-codes",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
