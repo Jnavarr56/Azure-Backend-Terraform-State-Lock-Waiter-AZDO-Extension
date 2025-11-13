@@ -115,7 +115,7 @@ stages:
               targetType: 'inline'
               pwsh: true
               script: |
-                cd '$(Pipeline.Workspace)/SourceCode'
+                cd '$(Pipeline.Workspace)/SourceCode';
                 npm ci;
                 npm run build;
                 # npm run package;
