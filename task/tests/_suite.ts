@@ -105,7 +105,9 @@ interface TerraformState {
     };
 }
 
-async function resetSimulateRemoteStateFileLease(testCaseDirName: string): Promise<{ blobLeaseClient: BlobLeaseClient; blobName: string; containerName: string; storageAccountName: string }> {
+async function resetSimulateRemoteStateFileLease(
+    testCaseDirName: string
+): Promise<{ blobLeaseClient: BlobLeaseClient; blobName: string; containerName: string; storageAccountName: string }> {
     const servicePrincipalId = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_SERVICE_PRINCIPAL_ID']!;
     const servicePrincipalKey = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_SERVICE_PRINCIPAL_KEY']!;
     const tenantId = process.env['TEST_AUTHORIZED_AZURERM_SERVICE_CONNECTION_TENANT_ID']!;
@@ -131,18 +133,17 @@ async function resetSimulateRemoteStateFileLease(testCaseDirName: string): Promi
     const containerClient = blobServiceClient.getContainerClient(containerName);
     const blobClient = containerClient.getBlobClient(blobName);
 
-
-    let properties = await blobClient.getProperties();
-    let leaseState = properties.leaseState;
-    let leaseStatus = properties.leaseStatus;
+    const properties = await blobClient.getProperties();
+    const leaseState = properties.leaseState;
+    const leaseStatus = properties.leaseStatus;
 
     const blobLeaseClient = blobClient.getBlobLeaseClient();
-
 
     console.group(leaseState, leaseStatus);
 
     if (
-        leaseState === 'broken' || !(leaseState === 'available' || leaseState === 'expired' || leaseStatus === 'unlocked')
+        leaseState === 'broken' ||
+        !(leaseState === 'available' || leaseState === 'expired' || leaseStatus === 'unlocked')
     ) {
         await blobLeaseClient.breakLease(0);
 
