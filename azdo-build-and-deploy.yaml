@@ -158,7 +158,7 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
-              # patternManifest: '$(Pipeline.Workspace)/SourceCode/*.json'
+              patternManifest: 'src/**/*.json'
 
           - task: PowerShell@2
             displayName: 'Get filename'
