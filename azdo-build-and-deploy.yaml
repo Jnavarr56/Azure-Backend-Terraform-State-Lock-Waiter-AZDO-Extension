@@ -225,7 +225,7 @@ stages:
                       Write-Output "VSIX File Full Name: $vsixFileFullName";
                       Write-Host "##vso[task.setvariable variable=vsixFileFullName]$vsixFileFullName";
 
-      ]        - task: TfxInstaller@4
+                - task: TfxInstaller@4
                   displayName: 'Install TFX CLI'
                   inputs:
                     version: "v0.x"
