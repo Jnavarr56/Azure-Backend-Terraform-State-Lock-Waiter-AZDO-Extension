@@ -132,7 +132,6 @@ stages:
                 Write-Host "##vso[task.setsecret]$accessToken"
                 Write-Host "##vso[task.setendpoint id=$env:MARKETPLACESERVICECONNECTION;field=authParameter;key=password]$accessToken"
 
-                ls '$(Pipeline.Workspace)';
 
           - task: QueryAzureDevOpsExtensionVersion@4
             name: QueryVersion
@@ -149,7 +148,7 @@ stages:
             env:
               TFX_TRACE: '1'
             inputs:
-              rootFolder: '$(Pipeline.Workspace)/SourceCode'
+              rootFolder: '$(Pipeline.Workspace)/SourceCode/task'
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
