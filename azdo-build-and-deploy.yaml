@@ -158,7 +158,7 @@ stages:
               updateTasksVersionType: 'patch'
               extensionVisibility: '$(visibility)'
               extensionPricing: 'free'
-              patternManifest: 'src/**/*.json'
+              patternManifest: '**/*.json'
 
           - task: PowerShell@2
             displayName: 'Get filename'
