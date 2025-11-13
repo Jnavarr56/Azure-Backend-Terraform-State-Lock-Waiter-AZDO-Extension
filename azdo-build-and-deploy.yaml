@@ -42,7 +42,8 @@ stages:
           - task: Npm@1
             displayName: 'Run unit and integration tests'
             inputs:
-              command: 'test'
+              command: 'custom'
+              customCommand: 'run test'
           
           - task: PublishTestResults@2
             displayName: 'Publish test results'
