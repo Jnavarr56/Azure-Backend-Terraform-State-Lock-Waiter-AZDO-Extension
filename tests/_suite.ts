@@ -83,8 +83,6 @@ async function prepareMockTestRunner(testDirectoryName: string): Promise<ttm.Moc
     const testPath = getAbsPathToTest(testDirectoryName);
 
     const tr: ttm.MockTestRunner = await new ttm.MockTestRunner().LoadAsync(testPath, TASK_JSON_PATH);
-
-    tr = await tr.LoadAsync(testPath, TASK_JSON_PATH);
     await tr.runAsync();
 
     return tr;
