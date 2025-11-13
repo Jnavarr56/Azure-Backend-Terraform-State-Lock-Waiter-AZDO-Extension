@@ -48,7 +48,7 @@ function printNonDebugLines(tr: ttm.MockTestRunner, testCaseName?: string): void
         tr.stdout
             .split('\n')
             .filter((l) => !l.match(/^##vso(.*)/))
-            .map((l) => `_${l}`)
+            .map((l) => `   ${l}`)
             .join('\n'),
         tr.stderr
     );
@@ -127,7 +127,7 @@ async function resetSimulateRemoteStateFileLease(
         blobName += `env:${environmentName}`;
     }
 
-    const blobServiceClient = new BlobServiceClient(`https:{storageAccountName}.blob.core.windows.net`, credential);
+    const blobServiceClient = new BlobServiceClient(`https://${storageAccountName}.blob.core.windows.net`, credential);
 
     const containerClient = blobServiceClient.getContainerClient(containerName);
     const blobClient = containerClient.getBlobClient(blobName);
