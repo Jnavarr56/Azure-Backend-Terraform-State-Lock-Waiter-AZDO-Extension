@@ -8,7 +8,7 @@ variables:
   publisherId: 'jorge-codes'        
   extensionId: 'azure-backend-terraform-state-lock-waiter'        
   extensionName: 'Azure Backend Terraform State Lock Waiter'
-  artifactName: 'vsix-artifact'
+  artifactName: 'package.vsix'
   visibility: 'private'
   marketplaceServiceConnection: 'd7744d61-b6a6-40d9-b5f7-ed766d9a9584'
   
@@ -105,7 +105,7 @@ stages:
           - task: PackageAzureDevOpsExtension@4
             displayName: 'Package extension'
             inputs:
-              rootFolder: '$(System.DefaultWorkingDirectory)'
+              rootFolder: '$(System.DefaultWorkingDirectory)/src'
               publisherId: '$(publisherId)'
               extensionId: '$(extensionId)'
               extensionName: '$(extensionName)'
@@ -126,9 +126,8 @@ stages:
                 npm run package;
 
                 $vsixFileName = (Get-ChildItem -Path '.' -Filter '*.vsix').FullName;
-                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName;
+                Write-Host "##vso[task.setvariable variable=vsixFileName]$vsixFileName";
 
-                
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish VSIX artifact'
@@ -162,7 +161,7 @@ stages:
                       
                 - task: DownloadPipelineArtifact@1
                   inputs:
-                    artifactName: 'pack.vsix'
+                    artifactName: 'package.vsix'
                     downloadPath: '$(Pipeline.Workspace)/pack.vsix'
 
                 - task: PublishAzureDevOpsExtension@4
@@ -171,7 +170,7 @@ stages:
                     connectTo: 'VsTeam'
                     connectedServiceName: '$(marketplaceServiceConnection)'
                     fileType: 'vsix'
-                    vsixFile: '$(Pipeline.Workspace)/$(artifactName)'
+                    vsixFile: '$(Pipeline.Workspace)/pack.vsix'
                     publisherId: '$(publisherId)'
                     extensionId: '$(extensionId)'
                     extensionName: '$(extensionName)'
