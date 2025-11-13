@@ -44,12 +44,12 @@ stages:
                 npm ci;
                 # npm test;
           
-          - task: PublishTestResults@2
-            displayName: 'Publish test results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/test-results.xml'
-              searchFolder: '$(System.DefaultWorkingDirectory)'
+          # - task: PublishTestResults@2
+          #   displayName: 'Publish test results'
+          #   inputs:
+          #     testResultsFormat: 'JUnit'
+          #     testResultsFiles: '**/test-results.xml'
+          #     searchFolder: '$(System.DefaultWorkingDirectory)'
 
   - stage: Package_extension
     displayName: 'Build and Package Extension'
