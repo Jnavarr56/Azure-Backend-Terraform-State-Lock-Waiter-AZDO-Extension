@@ -48,7 +48,7 @@ function printNonDebugLines(tr: ttm.MockTestRunner, testCaseName?: string): void
         tr.stdout
             .split('\n')
             .filter((l) => !l.match(/^##vso(.*)/))
-            .map((l) => `   ${l}`.replace(`servicePrincipalKey: \S+`, 'servicePrincipalKey: ********'))
+            .map((l) => `   ${l}`.replace(/servicePrincipalKey: \S+/g, 'servicePrincipalKey: ********'))
             .join('\n'),
         tr.stderr
     );
@@ -581,7 +581,7 @@ describe('Azure Backend Terraform State Lock Waiter Tests', function () {
             'should indicate task was waiting for lease to be released'
         );
         assert.equal(
-            tr.errorIssues[0].includes('Timeout: Terraform state file still has a lease after 120 seconds'),
+            tr.errorIssues[0].includes('Timeout: Terraform state file still has a lease after 60 seconds'),
             true,
             'should indicate max wait time exceeded'
         );
