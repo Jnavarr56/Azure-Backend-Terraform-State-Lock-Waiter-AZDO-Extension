@@ -8,7 +8,8 @@ import { ClientSecretCredential } from '@azure/identity';
 import { BlobLeaseClient, BlobServiceClient, RestError } from '@azure/storage-blob';
 
 const TESTS_ROOT_PATH = path.join(__dirname, 'test-cases');
-const TASK_JSON_PATH = path.join(__dirname, '..', 'src', 'task.json');
+const TASK_JSON_PATH = path.join(__dirname, '..', 'task', 'src', 'task.json');
+
 
 function minutesMs(numMinutes: number): number {
     return numMinutes * 60 * 1000;
@@ -19,6 +20,7 @@ dotenv.config({
 });
 
 function getAbsPathToTest(testDirectoryName: string): string {
+    
     return path.join(TESTS_ROOT_PATH, testDirectoryName, 'index.js');
 }
 
