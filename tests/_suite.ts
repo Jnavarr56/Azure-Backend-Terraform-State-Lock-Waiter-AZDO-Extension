@@ -48,7 +48,7 @@ function printNonDebugLines(tr: ttm.MockTestRunner, testCaseName?: string): void
         tr.stdout
             .split('\n')
             .filter((l) => !l.match(/^##vso(.*)/))
-            .map((l) => `   ${l}`)
+            .map((l) => `   ${l}`.replace(`servicePrincipalKey: \S+`, 'servicePrincipalKey: ********'))
             .join('\n'),
         tr.stderr
     );
