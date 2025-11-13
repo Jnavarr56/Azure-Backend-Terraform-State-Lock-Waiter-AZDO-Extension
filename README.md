@@ -96,9 +96,10 @@ Update the `id` in `buildAndReleaseTask/task.json` with a unique GUID.
 
 1. Add the task to your Azure DevOps pipeline
 2. Configure the Azure RM service connection
-3. (Optional) Specify the Terraform project path, or leave empty to use the default working directory
-4. (Optional) Configure maximum wait time and poll interval
-5. Ensure `.terraform/terraform.tfstate` file exists in the project directory with azurerm backend configuration
+3. Specify the Terraform project path (required)
+4. (Optional) Configure maximum wait time (default: 30 minutes, min: 1 minute, max: 2 hours)
+5. (Optional) Configure poll interval (default: 10 seconds, min: 5 seconds, max: 5 minutes)
+6. Ensure `.terraform/terraform.tfstate` file exists in the project directory with azurerm backend configuration
 
 The task will:
 
@@ -140,23 +141,23 @@ Your `.terraform/terraform.tfstate` should contain:
 
 ```yaml
 steps:
-    - task: TerraformStateLeaseChecker@1
+    - task: AzureBackendTerraformStateLockWaiter@1
       displayName: 'Wait for Terraform State Lease'
       inputs:
-          azureSubscription: 'My Azure Subscription'
+          azureServiceConnection: 'My Azure Service Connection'
           terraformProjectPath: '$(System.DefaultWorkingDirectory)/infrastructure'
-          maxWaitTimeSeconds: '1800' # 30 minutes (default)
-          pollIntervalSeconds: '10' # 10 seconds (default)
+          maxWaitTimeSeconds: '1800' # Optional: 30 minutes (default), min: 60s, max: 7200s
+          pollIntervalSeconds: '10' # Optional: 10 seconds (default), min: 5s, max: 300s
 ```
 
 ### Input Parameters
 
-| Parameter              | Type                     | Required | Default                        | Description                                                                      |
-| ---------------------- | ------------------------ | -------- | ------------------------------ | -------------------------------------------------------------------------------- |
-| `azureSubscription`    | connectedService:AzureRM | Yes      | -                              | Azure Resource Manager subscription for accessing the Terraform state file       |
-| `terraformProjectPath` | string                   | No       | System.DefaultWorkingDirectory | Path to the root directory of the Terraform project                              |
-| `maxWaitTimeSeconds`   | string                   | No       | 1800                           | Maximum time in seconds to wait for the blob to be available (1800 = 30 minutes) |
-| `pollIntervalSeconds`  | string                   | No       | 10                             | Interval in seconds between polling attempts                                     |
+| Parameter                 | Type                     | Required | Default | Description                                                                                                                     |
+| ------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `azureServiceConnection`  | connectedService:AzureRM | Yes      | -       | Azure Resource Manager Service Connection for accessing the Terraform state file                                                |
+| `terraformProjectPath`    | string                   | Yes      | -       | Path to the root directory of the Terraform project                                                                             |
+| `maxWaitTimeSeconds`      | string                   | No       | 1800    | Maximum time in seconds to wait for the blob to be available. Default: 1800 (30 min). Min: 60 (1 min). Max: 7200 (2 hours).    |
+| `pollIntervalSeconds`     | string                   | No       | 10      | Interval in seconds between polling attempts. Default: 10 seconds. Min: 5 seconds. Max: 300 (5 minutes).                        |
 
 ## License
 

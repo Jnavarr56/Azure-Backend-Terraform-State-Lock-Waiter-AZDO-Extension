@@ -51,10 +51,17 @@ The test suite includes placeholder tests for:
 - Missing state file handling
 - Backend type validation
 - Workspace detection and blob name derivation
-- Custom timeout and poll interval configuration
-- Input validation
+- Custom timeout and poll interval configuration (60-7200s for maxWaitTimeSeconds, 5-300s for pollIntervalSeconds)
+- Input validation (azureServiceConnection and terraformProjectPath are required)
 - Lease status checking
 - Timeout behavior
 - Non-existent blob handling
 
 These are currently placeholder tests that need to be implemented with actual mock data and assertions.
+
+## Input Parameters Tested
+
+- **azureServiceConnection** (required): Azure RM Service Connection
+- **terraformProjectPath** (required): Path to Terraform project root
+- **maxWaitTimeSeconds** (optional): Max wait time in seconds (default: 1800, min: 60, max: 7200)
+- **pollIntervalSeconds** (optional): Poll interval in seconds (default: 10, min: 5, max: 300)
